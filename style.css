@@ -1,0 +1,87 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f5f5f7;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#map {
+  height: 100vh;
+  width: 100%;
+}
+
+/* 🌤️ iOS-like glassy search bar */
+.search-container {
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px);
+  padding: 10px 15px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.search-container input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #222;
+  width: 450px;
+}
+
+.search-container button {
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.search-container button:hover {
+  background: #0059c9;
+}
+
+/* 🍏 Info card */
+.info-card {
+  position: absolute;
+  top: 75px;
+  left: 30px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  border-radius: 18px;
+  padding: 15px 20px;
+  width: 210px;
+  color: #111;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  z-index: 900;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.info-card.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.info-card h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.info-card p {
+  margin: 4px 0;
+  font-size: 15px;
+  color: #333;
+}

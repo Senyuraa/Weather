@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iOS Weather Map</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+
+    :root {
+      --bg: #f5f5f7;
+      --text: #111;
+      --card-bg: rgba(255,255,255,0.85);
+      --search-bg: rgba(255,255,255,0.8);
+      --accent: #007aff;
+    }
+
+    body.dark {
+      --bg: #1c1c1e;
+      --text: #fefefe;
+      --card-bg: rgba(40,40,42,0.85);
+      --search-bg: rgba(30,30,32,0.75);
+      --accent: #0a84ff;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+      transition: filter 0.5s ease;
+    }
+
+    .search-bar {
+      position: absolute;
+      top: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      background: var(--search-bg);
+      backdrop-filter: blur(12px);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .search-bar input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 500;
+      padding: 6px;
+    }
+
+    .info-box {
+      position: absolute;
+      top: 50px;
+      left: 25px;
+      background: var(--card-bg);
+      backdrop-filter: blur(15px);
+      padding: 15px 18px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1000;
+      min-width: 180px;
+      transition: all 0.3s ease;
+    }
+
+    .info-box.show {
+      display: block;
+    }
+
+    .info-box h3 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .info-box p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: var(--text);
+      opacity: 0.9;
+    }
+
+    #darkModeToggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 50%;
+      background: var(--search-bg);
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      z-index: 1200;
+      transition: 0.3s;
+    }
+
+    #inspired {
+      position: absolute;
+      bottom: 20px;
+      left: 25px;
+      font-size: 13px;
+      color: var(--text);
+      opacity: 0.6;
+      z-index: 1000;
+      font-weight: 500;
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Search city or country" />
+  </div>
+
+  <div class="info-box" id="infoBox">
+    <h3 id="infoCity"></h3>
+    <p id="infoDetails"></p>
+  </div>
+
+  <button id="darkModeToggle">🌗</button>
+
+  <div id="inspired">Inspired by  Maps</div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+
+    const lightTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: ''
+    });
+    const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: ''
+    });
+
+    lightTiles.addTo(map);
+    let isDark = false;
+    let marker = null;
+
+    const searchInput = document.getElementById('searchInput');
+    const infoBox = document.getElementById('infoBox');
+    const infoCity = document.getElementById('infoCity');
+    const infoDetails = document.getElementById('infoDetails');
+    const darkToggle = document.getElementById('darkModeToggle');
+
+    // Search functionality
+    searchInput.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        const query = searchInput.value.trim();
+        if (!query) return;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+        const arr = await res.json();
+        if (arr && arr.length > 0) {
+          const place = arr[0];
+          const lat = parseFloat(place.lat);
+          const lon = parseFloat(place.lon);
+          map.flyTo([lat, lon], 6, { duration: 2 });
+          if (marker) map.removeLayer(marker);
+          marker = L.marker([lat, lon]).addTo(map);
+
+          // Fake weather & time
+          const fakeTemp = Math.floor(Math.random() * 15) + 18;
+          const weatherList = ["☀️ Sunny", "🌤️ Clear", "🌧️ Rain", "⛅ Cloudy", "🌦️ Showers"];
+          const weather = weatherList[Math.floor(Math.random() * weatherList.length)];
+          const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
+          infoCity.textContent = place.display_name.split(',')[0];
+          infoDetails.innerHTML = `${weather} • ${fakeTemp}°C <br>🕓 ${now}`;
+          infoBox.classList.add('show');
+        } else {
+          alert("City not found 😕");
+        }
+      }
+    });
+
+    // Dark mode toggle
+    darkToggle.addEventListener('click', () => {
+      isDark = !isDark;
+      document.body.classList.toggle('dark');
+      if (isDark) {
+        map.removeLayer(lightTiles);
+        darkTiles.addTo(map);
+        map.getContainer().style.filter = "brightness(0.9) saturate(1.2)";
+      } else {
+        map.removeLayer(darkTiles);
+        lightTiles.addTo(map);
+        map.getContainer().style.filter = "brightness(1) saturate(1)";
+      }
+    });
+  </script>
+</body>
+</html>
