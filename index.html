@@ -1,220 +1,269 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iOS Weather Map</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      transition: background 0.4s ease, color 0.4s ease;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Apple-Inspired Map — Approx Local Time (No API)</title>
 
-    :root {
-      --bg: #f5f5f7;
-      --text: #111;
-      --card-bg: rgba(255,255,255,0.85);
-      --search-bg: rgba(255,255,255,0.8);
-      --accent: #007aff;
-    }
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-    body.dark {
-      --bg: #1c1c1e;
-      --text: #fefefe;
-      --card-bg: rgba(40,40,42,0.85);
-      --search-bg: rgba(30,30,32,0.75);
-      --accent: #0a84ff;
-    }
-
-    #map {
-      height: 100%;
-      width: 100%;
-      z-index: 1;
-      transition: filter 0.5s ease;
-    }
-
-    .search-bar {
-      position: absolute;
-      top: 35px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 300px;
-      background: var(--search-bg);
-      backdrop-filter: blur(12px);
-      border-radius: 14px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .search-bar input {
-      flex: 1;
-      border: none;
-      outline: none;
-      background: transparent;
-      color: var(--text);
-      font-size: 15px;
-      font-weight: 500;
-      padding: 6px;
-    }
-
-    .info-box {
-      position: absolute;
-      top: 50px;
-      left: 25px;
-      background: var(--card-bg);
-      backdrop-filter: blur(15px);
-      padding: 15px 18px;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      display: none;
-      z-index: 1000;
-      min-width: 180px;
-      transition: all 0.3s ease;
-    }
-
-    .info-box.show {
-      display: block;
-    }
-
-    .info-box h3 {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .info-box p {
-      margin: 8px 0 0;
-      font-size: 14px;
-      color: var(--text);
-      opacity: 0.9;
-    }
-
-    #darkModeToggle {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      width: 42px;
-      height: 42px;
-      border: none;
-      border-radius: 50%;
-      background: var(--search-bg);
-      color: var(--text);
-      font-size: 20px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      z-index: 1200;
-      transition: 0.3s;
-    }
-
-    #inspired {
-      position: absolute;
-      bottom: 20px;
-      left: 25px;
-      font-size: 13px;
-      color: var(--text);
-      opacity: 0.6;
-      z-index: 1000;
-      font-weight: 500;
-      backdrop-filter: blur(8px);
-    }
-  </style>
+<style>
+  :root{
+    --glass: rgba(255,255,255,0.78);
+    --glass-dark: rgba(25,25,28,0.78);
+    --accent: #0a84ff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Arial;color:#111}
+  #map{position:absolute;inset:0;height:100%;width:100%;z-index:0;transition:filter .4s ease}
+  /* top bar */
+  .top-bar{
+    position: absolute;left:50%;transform:translateX(-50%);top:22px;
+    z-index:1200;display:flex;align-items:center;gap:10px;
+    padding:8px 12px;border-radius:999px;
+    background:var(--glass);backdrop-filter:blur(12px);
+    box-shadow:0 6px 18px rgba(0,0,0,0.12);
+  }
+  .top-bar.dark{background:var(--glass-dark);color:#fff;}
+  .search-input{
+    border:0;background:transparent;outline:none;padding:6px 8px;
+    font-size:15px;width:260px;color:inherit;font-weight:500;
+  }
+  .icon-btn{width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,0.95);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:transform .2s;}
+  .icon-btn:hover{transform:scale(1.06)}
+  .dark .icon-btn{background:rgba(40,40,40,0.85);color:#fff}
+  /* info card */
+  .info-card{
+    position:absolute;left:20px;top:92px;z-index:1200;
+    min-width:220px;padding:14px 16px;border-radius:14px;
+    background:var(--glass);backdrop-filter:blur(14px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.18);opacity:0;transform:translateX(-12px);
+    transition:all .36s ease;display:none;
+    color:#111;
+  }
+  .info-card.show{display:block;opacity:1;transform:none}
+  .dark .info-card{background:var(--glass-dark);color:#fff;}
+  h3{margin:0;font-size:18px}
+  .muted{margin-top:8px;color:#444;font-size:14px;opacity:.9}
+  .dark .muted{color:#e3e3e3;opacity:.9}
+  /* inspired text bottom-left */
+  .inspired{position: absolute;left:18px;bottom:12px;font-size:13px;color:rgba(0,0,0,0.55);z-index:1200}
+  .dark .inspired{color:rgba(255,255,255,0.7)}
+  /* small responsive */
+  @media (max-width:520px){
+    .top-bar{left:12px;transform:none;width:calc(100% - 24px)}
+    .search-input{width:160px}
+  }
+</style>
 </head>
 <body>
-  <div id="map"></div>
 
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="🔍 Search city or country" />
-  </div>
+<div id="map"></div>
 
-  <div class="info-box" id="infoBox">
-    <h3 id="infoCity"></h3>
-    <p id="infoDetails"></p>
-  </div>
+<!-- Top bar -->
+<div class="top-bar" id="topBar">
+  <form id="searchForm" onsubmit="return false;">
+    <input id="searchInput" class="search-input" placeholder="🔍 Search city or country (e.g. Dubai, Tokyo)" />
+  </form>
+  <button class="icon-btn" id="homeBtn" title="Reset home">🏠</button>
+  <button class="icon-btn" id="modeBtn" title="Toggle dark/light">🌙</button>
+</div>
 
-  <button id="darkModeToggle">🌗</button>
+<!-- Info card -->
+<div class="info-card" id="infoCard" aria-hidden="true">
+  <h3 id="placeName">Place</h3>
+  <div class="muted" id="placeDetails">Country • Weather • Time</div>
+</div>
 
-  <div id="inspired">Inspired by  Maps</div>
+<!-- Inspired -->
+<div class="inspired">Inspired by  Maps</div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    const lightTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: ''
-    });
-    const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: ''
-    });
+<script>
+/* Improved fake-weather model:
+   - Uses latitude and current month to estimate a realistic temperature baseline
+   - Applies seasonal amplitude and hemisphere inversion
+   - Adds small random noise for variation
+   - Picks weather emoji/condition based on temperature and humidity-ish guess
+   No external weather APIs required.
+*/
 
-    lightTiles.addTo(map);
-    let isDark = false;
-    let marker = null;
+const map = L.map('map', { zoomControl:false, worldCopyJump:true }).setView([20,0],2);
 
-    const searchInput = document.getElementById('searchInput');
-    const infoBox = document.getElementById('infoBox');
-    const infoCity = document.getElementById('infoCity');
-    const infoDetails = document.getElementById('infoDetails');
-    const darkToggle = document.getElementById('darkModeToggle');
+const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {maxZoom:19});
+const darkLayer  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {maxZoom:19});
+const darkLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {maxZoom:19});
 
-    // Search functionality
-    searchInput.addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') {
-        const query = searchInput.value.trim();
-        if (!query) return;
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-        const arr = await res.json();
-        if (arr && arr.length > 0) {
-          const place = arr[0];
-          const lat = parseFloat(place.lat);
-          const lon = parseFloat(place.lon);
-          map.flyTo([lat, lon], 6, { duration: 2 });
-          if (marker) map.removeLayer(marker);
-          marker = L.marker([lat, lon]).addTo(map);
+lightLayer.addTo(map);
 
-          // Fake weather & time
-          const fakeTemp = Math.floor(Math.random() * 15) + 18;
-          const weatherList = ["☀️ Sunny", "🌤️ Clear", "🌧️ Rain", "⛅ Cloudy", "🌦️ Showers"];
-          const weather = weatherList[Math.floor(Math.random() * weatherList.length)];
-          const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+let isDark = false;
+let currentMarker = null;
+const defaultCenter = [20,0];
 
-          infoCity.textContent = place.display_name.split(',')[0];
-          infoDetails.innerHTML = `${weather} • ${fakeTemp}°C <br>🕓 ${now}`;
-          infoBox.classList.add('show');
-        } else {
-          alert("City not found 😕");
-        }
-      }
-    });
+const topBar = document.getElementById('topBar');
+const modeBtn = document.getElementById('modeBtn');
+const homeBtn = document.getElementById('homeBtn');
+const searchInput = document.getElementById('searchInput');
+const searchForm = document.getElementById('searchForm');
+const infoCard = document.getElementById('infoCard');
+const placeName = document.getElementById('placeName');
+const placeDetails = document.getElementById('placeDetails');
 
-    // Dark mode toggle
-    darkToggle.addEventListener('click', () => {
-      isDark = !isDark;
-      document.body.classList.toggle('dark');
-      if (isDark) {
-        map.removeLayer(lightTiles);
-        darkTiles.addTo(map);
-        map.getContainer().style.filter = "brightness(0.9) saturate(1.2)";
-      } else {
-        map.removeLayer(darkTiles);
-        lightTiles.addTo(map);
-        map.getContainer().style.filter = "brightness(1) saturate(1)";
-      }
-    });
-  </script>
+const countryOffsetCorrections = [
+  {match:/India|Sri Lanka/i,offset:5.5},
+  {match:/Nepal/i,offset:5.75},
+  {match:/Iran/i,offset:3.5},
+  {match:/Myanmar|Burma/i,offset:6.5},
+  {match:/Afghanistan/i,offset:4.5},
+  {match:/Venezuela/i,offset:-4},
+];
+
+// approximate timezone offset in hours (fractional allowed)
+function approxOffsetHours(lon, name){
+  const raw = Math.round(lon / 7.5) / 2; // 7.5deg = 0.5 hour
+  for(const c of countryOffsetCorrections){
+    if(name && c.match.test(name)) return c.offset;
+  }
+  return Math.abs(raw) < 0.0001 ? 0 : raw;
+}
+function localDateFromOffset(offset){
+  const now = new Date();
+  const utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+  return new Date(utc.getTime() + offset * 3600000);
+}
+function formatTime(d){
+  if(!d) return '--:--';
+  let h = d.getHours(), m = d.getMinutes(), ampm = h>=12?'PM':'AM';
+  h = h % 12; if(h === 0) h = 12;
+  return `${h}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+/* New climate-based temperature estimator */
+function estimateTemperature(lat, monthIndex){
+  // monthIndex: 0..11 (Jan=0)
+  // base temp depends on latitude (tropical near 0 -> higher base)
+  // base range: near equator ~30°C, poles ~ -10°C
+  const latAbs = Math.abs(lat);
+  const base = 30 - (latAbs / 90) * 40; // linear between 30 and -10
+
+  // seasonal amplitude (how strong seasons are) depends on latitude
+  // tropics: low amplitude, high latitudes: higher amplitude
+  const amplitude = 8 + (latAbs / 90) * 12; // ~8..20
+
+  // angle for month (we want peak in July for Northern Hemisphere)
+  const angle = (monthIndex / 12) * 2 * Math.PI; // 0..2pi
+  // For northern hemisphere peak at July (monthIndex 6 -> angle pi)
+  // seasonalShift = amplitude * -cos(angle) for northern, inverted for southern
+  const hemisphereFactor = lat >= 0 ? 1 : -1;
+  const seasonalShift = amplitude * (-Math.cos(angle)) * hemisphereFactor;
+
+  // combine, add small noise
+  const noise = (Math.random() - 0.5) * 4; // +/-2°C
+  const temp = base + seasonalShift + noise;
+
+  // round to one decimal
+  return Math.round(temp * 10) / 10;
+}
+
+// humidity-ish guess from temperature (not real)
+function estimateHumidity(temp){
+  // colder -> drier (ish), warmer -> more humid (ish); clamp 20..90
+  let hum = 60 - (temp - 20) * 1.2;
+  if(hum < 20) hum = 20; if(hum > 90) hum = 90;
+  return Math.round(hum);
+}
+
+// choose emoji and condition from temp + humidity
+function weatherFromTemp(temp, humidity){
+  if(temp <= 0) return {emoji:'❄️', text:'Snow'};
+  if(temp <= 8) return {emoji:'🌧️', text:'Cold/Rain'};
+  if(temp <= 16){
+    return humidity > 70 ? {emoji:'🌦️', text:'Showers'} : {emoji:'☁️', text:'Cloudy'};
+  }
+  if(temp <= 25) return {emoji:'🌤️', text:'Mild/Clear'};
+  return {emoji:'☀️', text:'Hot & Sunny'};
+}
+
+// UI: show info card
+function showInfo(display,country,lat,lon){
+  const offset = approxOffsetHours(lon,display);
+  const local = localDateFromOffset(offset);
+  const monthIndex = local.getMonth();
+  const temp = estimateTemperature(lat, monthIndex);
+  const humidity = estimateHumidity(temp);
+  const weather = weatherFromTemp(temp, humidity);
+
+  placeName.textContent = (display.split(',')[0] || display);
+  placeDetails.innerHTML = `${country||'—'} • ${weather.emoji} ${weather.text} • ${temp}°C <br>💧 ${humidity}% • 🕒 ${formatTime(local)} (approx)`;
+  infoCard.classList.add('show');
+  infoCard.setAttribute('aria-hidden','false');
+}
+
+// Search handler
+searchForm.addEventListener('submit', async e=>{
+  e.preventDefault();
+  const q = searchInput.value.trim();
+  if(!q) return;
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(q)}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    if(!data || data.length === 0){ alert('Place not found'); return; }
+    const p = data[0];
+    const lat = parseFloat(p.lat), lon = parseFloat(p.lon);
+    const display = p.display_name || q;
+    const comps = display.split(',').map(s=>s.trim()).filter(Boolean);
+    const country = comps.length? comps[comps.length-1]: '';
+    map.flyTo([lat,lon], 6, {duration:1.5});
+    if(currentMarker) map.removeLayer(currentMarker);
+    currentMarker = L.marker([lat,lon]).addTo(map);
+    showInfo(display, country, lat, lon);
+  }catch(err){
+    console.error(err);
+    alert('Search error');
+  }
+});
+
+// Home button
+homeBtn.addEventListener('click', ()=>{
+  map.flyTo(defaultCenter, 2, {duration:1.5});
+  if(currentMarker) map.removeLayer(currentMarker);
+  infoCard.classList.remove('show');
+  searchInput.value = '';
+});
+
+// Dark / Light toggle (with label overlay for readability)
+modeBtn.addEventListener('click', ()=>{
+  isDark = !isDark;
+  if(isDark){
+    map.removeLayer(lightLayer);
+    darkLayer.addTo(map);
+    darkLabels.addTo(map); // label overlay to keep labels bright
+    document.body.classList.add('dark');
+    topBar.classList.add('dark');
+    infoCard.classList.add('dark');
+    modeBtn.textContent = '☀️';
+    map.getContainer().style.filter='brightness(0.92) saturate(1.12)';
+  } else {
+    map.removeLayer(darkLayer);
+    try { map.removeLayer(darkLabels); } catch(e){}
+    lightLayer.addTo(map);
+    document.body.classList.remove('dark');
+    topBar.classList.remove('dark');
+    infoCard.classList.remove('dark');
+    modeBtn.textContent = '🌙';
+    map.getContainer().style.filter='brightness(1) saturate(1)';
+  }
+});
+
+// UX: Escape clears
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){ searchInput.value=''; infoCard.classList.remove('show'); }
+});
+
+// set nicer placeholder
+searchInput.placeholder = '🔍 Try: Dubai, New York, Mumbai...';
+</script>
 </body>
 </html>
