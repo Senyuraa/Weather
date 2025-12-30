@@ -1,4 +1,7 @@
-# 🗺️   Inspired Global Weather Map
+# 🗺️   Apple Inspired Global Weather Map
+<p align="center">
+  <img src="4.png" width="700">
+</p>
 # 🚀 Features
 * 🌍 Search any city or country across the globe
 * 🧭 Animated fly transition to the searched location
