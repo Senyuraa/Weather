@@ -2,6 +2,7 @@
 <p align="center">
   <img src="6.png" width="450">
 </p>
+
 # 🚀 Features
 * 🌍 Search any city or country across the globe
 * 🧭 Animated fly transition to the searched location
