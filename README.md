@@ -1,6 +1,6 @@
 # 🗺️   Apple Inspired Global Weather Map
 <p align="center">
-  <img src="6.png" width="700">
+  <img src="6.png" width="450">
 </p>
 # 🚀 Features
 * 🌍 Search any city or country across the globe
